@@ -1,0 +1,1168 @@
+<title>Building a Way Up</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Building a Way Up: Agentic Real2Sim2Real for Humanoids.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,400;0,6..12,500;0,6..12,600;0,6..12,700;0,6..12,800;1,6..12,400&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a drafting sheet. One 1120px column on a faint survey grid; the hero is a drawing title block; sections are sheets in a set. */
+:root {
+  --bg: #eceeec;          /* concrete paper */
+  --grid: #dfe3e0;        /* survey grid lines */
+  --surface: #f8f9f8;
+  --ink: #1b2328;         /* slate ink */
+  --muted: #5b676e;
+  --line: #c9cfcc;
+  --accent: #d9481f;      /* Sprout orange */
+  --accent-ink: #ffffff;
+  --accent-soft: #f6dcd2;
+  --plan: #44525c;        /* plan slate (Fig. 1 right panel) */
+  --twin: #c9773f;        /* Real2Sim band (Fig. 1 left panel) */
+  --good: #23784a;
+  --warn: #a8670a;
+  --bad: #b3302a;
+  --note-bg: #fff6c9;
+  --note-ink: #4a3d00;
+  --note-line: #d9c25a;
+  --video-bg: #11171b;
+  --display: "Avenir LT Pro", "Avenir Next LT Pro", "Avenir Next", "Avenir", "Nunito Sans", "Helvetica Neue", Arial, sans-serif;
+  --body: "Avenir LT Pro", "Avenir Next LT Pro", "Avenir Next", "Avenir", "Nunito Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12171a; --grid: #1a2125; --surface: #192125; --ink: #e4e9ea; --muted: #97a4aa; --line: #2d383d;
+    --accent: #ff7447; --accent-ink: #1a0d07; --accent-soft: #3a2219; --plan: #9fb0bb; --twin: #e39a62;
+    --good: #5fc488; --warn: #e9ac4c; --bad: #ff7f74; --note-bg: #2f2a12; --note-ink: #f1e3a0; --note-line: #6d6024;
+    --video-bg: #0a0e10; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12171a; --grid: #1a2125; --surface: #192125; --ink: #e4e9ea; --muted: #97a4aa; --line: #2d383d;
+  --accent: #ff7447; --accent-ink: #1a0d07; --accent-soft: #3a2219; --plan: #9fb0bb; --twin: #e39a62;
+  --good: #5fc488; --warn: #e9ac4c; --bad: #ff7f74; --note-bg: #2f2a12; --note-ink: #f1e3a0; --note-line: #6d6024;
+  --video-bg: #0a0e10; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 64px; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  background-color: var(--bg);
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 32px 32px;
+  color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.6;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); }
+a { color: var(--accent); text-underline-offset: 3px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; letter-spacing: -0.015em; line-height: 1.12; }
+h2 { font-size: clamp(26px, 3.4vw, 36px); font-weight: 800; }
+h3 { font-size: 19px; font-weight: 700; }
+p { margin: 0; }
+.mono { font-family: var(--mono); font-size: 13px; }
+.label { font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); }
+.wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.prose { max-width: 68ch; }
+.lede { font-size: 18px; color: var(--ink); }
+.muted { color: var(--muted); }
+
+/* ---------- top bar ---------- */
+.topbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--surface); border-bottom: 1px solid var(--line); }
+.topbar .wrap { display: flex; align-items: center; gap: 14px; min-height: 52px; padding-block: 6px; }
+.topbar .brand { font-family: var(--display); font-weight: 800; font-size: 16px; color: var(--ink); text-decoration: none; white-space: nowrap; }
+.topbar nav { flex: 1; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.topbar nav::-webkit-scrollbar { display: none; }
+.topbar ol { list-style: none; display: flex; gap: 4px; margin: 0; padding: 0; }
+.topbar nav a { display: inline-flex; gap: 6px; align-items: baseline; padding: 6px 9px; border-radius: 4px; color: var(--muted); text-decoration: none; font-size: 14px; white-space: nowrap; }
+.topbar nav a span { font-family: var(--mono); font-size: 11px; }
+.topbar nav a:hover, .topbar nav a.on { color: var(--ink); background: var(--bg); }
+@media (max-width: 640px) { .topbar .brand { display: none; } .switch .lbl { display: none; } .switch::after { content: "Notes"; } }
+.switch { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); white-space: nowrap; cursor: pointer; border: 1px solid var(--line); border-radius: 999px; padding: 5px 11px 5px 7px; background: var(--surface); font-family: var(--body); }
+.switch i { width: 26px; height: 15px; border-radius: 999px; background: var(--line); position: relative; transition: background .15s; }
+.switch i::after { content: ""; position: absolute; top: 2px; left: 2px; width: 11px; height: 11px; border-radius: 50%; background: var(--surface); transition: transform .15s; }
+.switch[aria-pressed="true"] i { background: var(--note-line); }
+.switch[aria-pressed="true"] i::after { transform: translateX(11px); }
+.switch[aria-pressed="true"] { color: var(--ink); }
+
+/* ---------- hero: title block ---------- */
+.hero { padding-block: 40px 28px; }
+.sheet { background: var(--surface); border: 1.5px solid var(--ink); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.12fr); }
+@media (max-width: 880px) { .sheet { grid-template-columns: 1fr; } }
+.sheet-main { padding: 28px 28px 24px; display: grid; gap: 18px; align-content: start; border-right: 1.5px solid var(--ink); min-width: 0; }
+@media (max-width: 880px) { .sheet-main { border-right: 0; border-bottom: 1.5px solid var(--ink); padding: 22px 18px; } }
+.hero h1 { font-size: clamp(30px, 3.9vw, 46px); font-weight: 800; letter-spacing: -0.025em; }
+.hero h1 em { font-style: normal; color: var(--accent); }
+.authors { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 15.5px; }
+.authors a, .authors span { color: var(--ink); text-decoration-color: var(--line); white-space: nowrap; }
+.authors sup { color: var(--muted); font-size: 11px; margin-left: 1px; }
+.affil { font-size: 14px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 2px 14px; }
+.btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.btn { display: inline-flex; align-items: center; gap: 8px; font: 600 14px var(--body); padding: 9px 15px; border-radius: 4px; text-decoration: none; border: 1.5px solid var(--ink); color: var(--ink); background: var(--surface); cursor: pointer; }
+.btn.primary { background: var(--ink); color: var(--surface); }
+.btn:hover { border-color: var(--accent); }
+.btn.primary:hover { background: var(--accent); color: var(--accent-ink); }
+.btn[aria-disabled="true"] { opacity: .55; }
+.sheet-media { display: grid; min-width: 0; }
+.sheet-media .vid { position: relative; background: var(--video-bg); min-height: 100%; }
+.sheet-media video { display: block; width: 100%; max-width: 100%; height: 100%; min-height: 300px; aspect-ratio: 568 / 320; object-fit: cover; }
+@media (min-width: 881px) { .sheet-media video { position: absolute; inset: 0; aspect-ratio: auto; } }
+.vid-cap { position: absolute; left: 10px; right: 10px; bottom: 10px; display: flex; gap: 8px; align-items: flex-end; justify-content: space-between; pointer-events: none; }
+.vid-cap q { font-size: 14px; color: #fff; background: rgba(10,14,16,.72); padding: 6px 10px; border-radius: 3px; max-width: 75%; quotes: "“" "”"; }
+.vid-cap button { pointer-events: auto; font: 500 12px var(--mono); color: #fff; background: rgba(10,14,16,.72); border: 1px solid rgba(255,255,255,.35); border-radius: 3px; padding: 5px 9px; cursor: pointer; }
+.tblock { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); border-top: 1.5px solid var(--ink); }
+.tblock div { padding: 10px 14px 12px; border-right: 1px solid var(--line); display: grid; gap: 2px; min-width: 0; align-content: start; }
+.tblock div:last-child { border-right: 0; }
+@media (max-width: 880px) { .tblock { grid-template-columns: repeat(3, minmax(0, 1fr)); } .tblock div:nth-child(3n) { border-right: 0; } .tblock div:nth-child(-n+3) { border-bottom: 1px solid var(--line); } }
+.tblock b { font-family: var(--display); font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.tblock span.label { font-size: 10.5px; }
+@media (max-width: 520px) { .tblock { grid-template-columns: repeat(2, minmax(0, 1fr)); } .tblock div:nth-child(3n) { border-right: 1px solid var(--line); } .tblock div:nth-child(2n) { border-right: 0; } .tblock div:nth-child(-n+4) { border-bottom: 1px solid var(--line); } }
+
+.question { margin-top: 28px; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 18px; align-items: start; }
+.question .q { font-family: var(--display); font-size: 64px; line-height: .8; color: var(--accent); font-weight: 800; }
+.question p { font-family: var(--display); font-size: clamp(20px, 2.4vw, 27px); font-weight: 500; line-height: 1.3; max-width: 34ch; letter-spacing: -0.01em; }
+.question small { display: block; margin-top: 10px; font-family: var(--body); font-size: 15px; color: var(--muted); max-width: 70ch; font-weight: 400; letter-spacing: 0; line-height: 1.55; }
+
+/* ---------- sections ---------- */
+main > section { padding-block: 56px 8px; }
+.sec-head { display: grid; gap: 10px; margin-bottom: 26px; }
+.sec-head .label b { color: var(--accent); font-weight: 500; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 4px; }
+
+/* review notes */
+.rn { display: none; background: var(--note-bg); color: var(--note-ink); border: 1px dashed var(--note-line); border-radius: 4px; padding: 10px 12px; font-size: 13.5px; line-height: 1.5; }
+.rn::before { content: "Review note"; display: block; font-family: var(--mono); font-size: 10.5px; letter-spacing: .09em; text-transform: uppercase; margin-bottom: 3px; opacity: .8; }
+.rn.todo::before { content: "To do"; }
+.rn.ask::before { content: "Decision needed"; }
+body.notes-on .rn { display: block; }
+.rn ul { margin: 4px 0 0; padding-left: 18px; }
+
+/* ---------- pipeline ---------- */
+.pipe { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; border: 1.5px solid var(--ink); background: var(--surface); }
+@media (max-width: 760px) { .pipe { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.pipe button { all: unset; box-sizing: border-box; cursor: pointer; padding: 14px 16px 16px; display: grid; gap: 4px; border-right: 1px solid var(--line); position: relative; min-width: 0; }
+.pipe button:last-child { border-right: 0; }
+@media (max-width: 760px) { .pipe button:nth-child(2) { border-right: 0; } .pipe button:nth-child(-n+2) { border-bottom: 1px solid var(--line); } }
+.pipe button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.pipe .n { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.pipe .t { font-family: var(--display); font-weight: 700; font-size: 18px; }
+.pipe .s { font-size: 13.5px; color: var(--muted); }
+.pipe button[aria-selected="true"] { background: var(--ink); color: var(--surface); }
+.pipe button[aria-selected="true"] .n, .pipe button[aria-selected="true"] .s { color: var(--surface); opacity: .75; }
+.pipe button[aria-selected="true"]::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1.5px; height: 4px; background: var(--accent); }
+.stage { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 28px; padding: 24px; border: 1.5px solid var(--ink); border-top: 0; background: var(--surface); }
+@media (max-width: 820px) { .stage { grid-template-columns: 1fr; padding: 18px; } }
+.stage .txt { display: grid; gap: 12px; align-content: start; min-width: 0; }
+.stage dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 16px; margin: 6px 0 0; font-size: 14px; }
+.stage dt { font-family: var(--mono); font-size: 12px; color: var(--muted); padding-top: 2px; }
+.stage dd { margin: 0; }
+.stage figure { margin: 0; display: grid; gap: 8px; min-width: 0; }
+.stage figure img { width: 100%; max-width: 100%; display: block; border: 1px solid var(--line); background: #fff; }
+.stage figcaption { font-size: 13px; color: var(--muted); }
+.steps4 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.steps4 figure { gap: 4px; }
+.steps4 figcaption { font-size: 12.5px; }
+.scanvid { display: grid; gap: 8px; min-width: 0; }
+.scanvid video { display: block; width: 100%; max-width: 100%; max-height: 520px; aspect-ratio: 3 / 4; object-fit: contain; background: var(--video-bg); border: 1px solid var(--line); }
+.roomchips { display: flex; flex-wrap: wrap; gap: 6px; }
+.mini-twin { position: relative; aspect-ratio: 4 / 3; max-width: 100%; border: 1px solid var(--line); background: var(--surface); }
+.mini-twin canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+.mini-twin canvas:active { cursor: grabbing; }
+.mini-twin .twin-hover { left: 8px; top: 8px; }
+.mini-twin .twin-load { font-size: 12.5px; }
+.scanbox { aspect-ratio: 4/3; max-width: 100%; border: 1px dashed var(--line); display: grid; place-items: center; text-align: center; padding: 20px; color: var(--muted); font-size: 14px; background: repeating-linear-gradient(135deg, transparent 0 10px, var(--bg) 10px 11px); }
+.code { font-family: var(--mono); font-size: 12.5px; background: var(--bg); border: 1px solid var(--line); border-radius: 3px; padding: 10px 12px; overflow-x: auto; white-space: pre; line-height: 1.55; }
+
+/* ---------- real vs sim ---------- */
+.pairs { display: grid; grid-template-columns: minmax(0, 520px) minmax(0, 1fr); gap: 0; border: 1.5px solid var(--ink); background: var(--surface); }
+@media (max-width: 860px) { .pairs { grid-template-columns: 1fr; } }
+.pairs .cmp { padding: 16px; border-right: 1.5px solid var(--ink); }
+@media (max-width: 860px) { .pairs .cmp { border-right: 0; border-bottom: 1.5px solid var(--ink); } }
+.pair-side { display: grid; align-content: start; min-width: 0; }
+.pair-list { display: grid; grid-template-columns: 1fr; gap: 0; }
+.pair-list button { all: unset; box-sizing: border-box; cursor: pointer; display: grid; grid-template-columns: 54px minmax(0, 1fr); gap: 10px; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line); min-width: 0; }
+.pair-list button { border-right: 0; }
+.pair-list h4 { margin: 0; padding: 10px 14px 6px; font: 500 11px var(--mono); letter-spacing: .09em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); background: var(--bg); }
+.pair-list button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.pair-list button img { width: 54px; height: 72px; object-fit: cover; display: block; border: 1px solid var(--line); }
+.pair-list button b { display: block; font-size: 14.5px; font-weight: 600; }
+.pair-list button span { font-size: 12.5px; color: var(--muted); }
+.pair-list button[aria-selected="true"] { background: var(--accent-soft); }
+.pair-list button[aria-selected="true"] img { border-color: var(--accent); }
+.pair-meta { padding: 16px; display: grid; gap: 10px; font-size: 14px; }
+.pair-meta dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 16px; margin: 0; }
+.pair-meta dt { font-family: var(--mono); font-size: 12px; color: var(--muted); padding-top: 2px; }
+.pair-meta dd { margin: 0; }
+.cmp { display: grid; gap: 10px; margin: 0; min-width: 0; align-content: start; }
+.cmp-frame { position: relative; aspect-ratio: 3 / 4; max-width: 100%; overflow: hidden; border: 1.5px solid var(--ink); background: var(--video-bg); touch-action: pan-y; cursor: ew-resize; }
+.cmp-frame img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; user-select: none; -webkit-user-drag: none; }
+.cmp-frame .top { clip-path: inset(0 calc(100% - var(--x, 50%)) 0 0); }
+.cmp-frame .rule { position: absolute; top: 0; bottom: 0; left: var(--x, 50%); width: 2px; margin-left: -1px; background: var(--accent); pointer-events: none; }
+.cmp-frame .rule::after { content: "⇆"; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font-size: 14px; }
+.cmp-frame .tag { position: absolute; top: 8px; font: 500 11px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: #fff; background: rgba(10,14,16,.7); padding: 2px 6px; border-radius: 2px; pointer-events: none; }
+.cmp-frame .tag.l { left: 8px; } .cmp-frame .tag.r { right: 8px; }
+.cmp input[type=range] { width: 100%; accent-color: var(--accent); margin: 0; }
+.cmp figcaption { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; }
+.cmp figcaption b { font-family: var(--display); }
+
+/* ---------- 3D twins ---------- */
+.twin { display: grid; grid-template-columns: minmax(0, 1fr) 300px; border: 1.5px solid var(--ink); background: var(--surface); }
+@media (max-width: 900px) { .twin { grid-template-columns: 1fr; } }
+.twin-view { position: relative; min-width: 0; aspect-ratio: 16 / 10; max-width: 100%; background: var(--surface); }
+.twin-view canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.twin-hover { position: absolute; left: 12px; top: 12px; font: 500 12.5px var(--mono); background: var(--ink); color: var(--surface); padding: 5px 9px; border-radius: 3px; pointer-events: none; }
+.twin-help { position: absolute; right: 10px; bottom: 10px; font-size: 12px; color: var(--muted); background: var(--surface); padding: 3px 8px; border-radius: 3px; pointer-events: none; }
+.twin-load { position: absolute; inset: 0; display: grid; place-items: center; font: 500 13px var(--mono); color: var(--muted); }
+.twin-side { border-left: 1.5px solid var(--ink); display: grid; align-content: start; min-width: 0; }
+@media (max-width: 900px) { .twin-side { border-left: 0; border-top: 1.5px solid var(--ink); } }
+.tabs { display: flex; flex-wrap: wrap; gap: 0; border-bottom: 1px solid var(--line); }
+.tabs button { flex: 1 1 auto; font: 600 13.5px var(--body); color: var(--muted); background: transparent; border: 0; border-bottom: 3px solid transparent; padding: 11px 10px 8px; cursor: pointer; }
+.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+.twin-info { padding: 16px; display: grid; gap: 14px; }
+.kv { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; font-size: 14px; font-variant-numeric: tabular-nums; }
+.kv span:nth-child(2n) { font-family: var(--mono); font-size: 13px; text-align: right; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; color: var(--muted); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+.twin-info label { display: flex; gap: 8px; align-items: center; font-size: 13.5px; cursor: pointer; }
+.phys-hint { font-size: 13.5px; }
+.twin-tools { position: absolute; top: 10px; right: 10px; display: flex; gap: 6px; z-index: 2; }
+.twin-tools button { font: 600 13px var(--body); padding: 7px 13px; border-radius: 999px; border: 1.5px solid var(--ink); background: var(--surface); color: var(--ink); cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.twin-tools button.primary { background: var(--ink); color: var(--surface); }
+.twin-tools button:hover { border-color: var(--accent); }
+.twin-tools button:disabled { opacity: .5; cursor: default; }
+@media (max-width: 560px) { .twin-view .twin-hover { top: 54px; } }
+.phys-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+.jlist { display: grid; gap: 2px; max-height: 170px; overflow-y: auto; border-top: 1px solid var(--line); padding-top: 8px; }
+.jlist h4 { margin: 0 0 4px; font: 500 11px var(--mono); letter-spacing: .09em; text-transform: uppercase; color: var(--muted); }
+.jrow { display: grid; gap: 1px; padding: 4px 0; }
+.jrow span { font-size: 12.5px; display: flex; justify-content: space-between; gap: 8px; }
+.jrow span i { font-style: normal; font-family: var(--mono); font-size: 11.5px; color: var(--muted); }
+.jrow input { width: 100%; accent-color: var(--accent); margin: 0; }
+.twin-info input { accent-color: var(--accent); }
+
+/* ---------- case study ---------- */
+.case { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 0; border: 1.5px solid var(--ink); background: var(--surface); }
+@media (max-width: 900px) { .case { grid-template-columns: 1fr; } }
+.case video { display: block; width: 100%; max-width: 100%; aspect-ratio: 854 / 480; background: var(--video-bg); }
+@media (min-width: 901px) { .case video { height: 100%; object-fit: contain; } }
+.case-side { border-left: 1.5px solid var(--ink); display: grid; align-content: start; min-width: 0; }
+@media (max-width: 900px) { .case-side { border-left: 0; border-top: 1.5px solid var(--ink); } }
+.case-cmd { padding: 16px; border-bottom: 1px solid var(--line); display: grid; gap: 6px; }
+.case-cmd q { font-family: var(--display); font-size: 20px; font-weight: 600; line-height: 1.3; quotes: "“" "”"; }
+.chap { list-style: none; margin: 0; padding: 0; }
+.chap button { all: unset; box-sizing: border-box; width: 100%; cursor: pointer; display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 10px; align-items: start; padding: 11px 16px; border-bottom: 1px solid var(--line); }
+.chap button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.chap .n { width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid var(--ink); display: grid; place-items: center; font: 600 12px var(--mono); }
+.chap b { display: block; font-weight: 600; font-size: 15px; }
+.chap span.d { font-size: 13px; color: var(--muted); }
+.chap .t { font: 400 12px var(--mono); color: var(--muted); padding-top: 3px; }
+.chap button.on { background: var(--accent-soft); }
+.chap button.on .n { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.case-map { padding: 12px 16px 16px; display: grid; gap: 6px; }
+.case-map img { width: 100%; max-width: 100%; border: 1px solid var(--line); display: block; }
+
+/* ---------- results ---------- */
+.sumtable { overflow-x: auto; border: 1.5px solid var(--ink); background: var(--surface); }
+.sumtable table { border-collapse: collapse; width: 100%; min-width: 600px; font-variant-numeric: tabular-nums; }
+.sumtable th, .sumtable td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: top; }
+.sumtable thead th { font: 500 11.5px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.sumtable tr.total td { border-top: 1.5px solid var(--ink); border-bottom: 0; }
+.sumtable td.room b { display: block; font-weight: 600; }
+.sumtable td.room span { font-size: 13px; color: var(--muted); }
+.score { display: grid; gap: 6px; }
+.score .num { font: 500 20px var(--mono); }
+.score .num small { font-size: 13px; color: var(--muted); }
+.score .bar { height: 6px; background: var(--bg); border: 1px solid var(--line); display: flex; overflow: hidden; }
+.score .bar i { display: block; height: 100%; }
+.score .bar i.ok { background: var(--good); } .score .bar i.warn { background: var(--warn); } .score .bar i.fail { background: var(--bad); }
+.score .extra { font-size: 12.5px; color: var(--muted); }
+
+.explorer { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); border: 1.5px solid var(--ink); background: var(--surface); margin-top: 20px; }
+@media (max-width: 960px) { .explorer { grid-template-columns: 1fr; } }
+.grid-side { padding: 16px; display: grid; gap: 18px; align-content: start; border-right: 1.5px solid var(--ink); min-width: 0; }
+@media (max-width: 960px) { .grid-side { border-right: 0; border-bottom: 1.5px solid var(--ink); } }
+.roomgrid { display: grid; gap: 8px; }
+.roomgrid h4 { margin: 0; font: 600 14px var(--body); display: flex; justify-content: space-between; gap: 8px; }
+.roomgrid h4 span { font: 400 12px var(--mono); color: var(--muted); }
+.runrow { display: grid; grid-template-columns: 74px minmax(0, 1fr); gap: 10px; align-items: start; }
+.runrow .label { padding-top: 6px; font-size: 10.5px; }
+.cells { display: flex; flex-wrap: wrap; gap: 5px; }
+.cell { width: 28px; height: 28px; border-radius: 3px; border: 2px solid transparent; cursor: pointer; padding: 0; position: relative; display: grid; place-items: center; font: 600 11px var(--mono); }
+.cell.ok { background: var(--good); border-color: var(--good); color: var(--surface); }
+.cell.none { background: transparent; border: 2px dashed var(--good); color: var(--good); }
+.cell.warn { background: transparent; border-color: var(--warn); color: var(--warn); }
+.cell.fail { background: transparent; border-color: var(--bad); color: var(--bad); }
+.cell[aria-pressed="true"] { outline: 2.5px solid var(--ink); outline-offset: 2px; }
+.cell:hover { transform: translateY(-1px); }
+.glegend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--muted); align-items: center; }
+.glegend .cell { width: 14px; height: 14px; border-width: 2px; cursor: default; display: inline-block; vertical-align: -2px; margin-right: 5px; }
+.glegend .cell:hover { transform: none; }
+.filters { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font: 500 12.5px var(--body); padding: 5px 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--muted); cursor: pointer; }
+.chip[aria-pressed="true"] { border-color: var(--ink); color: var(--ink); background: var(--bg); }
+.player { display: grid; align-content: start; min-width: 0; }
+.player video { display: block; width: 100%; max-width: 100%; aspect-ratio: 854 / 480; background: var(--video-bg); }
+.player .meta { padding: 14px 16px 18px; display: grid; gap: 8px; }
+.player .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.pill { font: 500 11.5px var(--mono); padding: 2px 8px; border-radius: 999px; border: 1px solid currentColor; white-space: nowrap; }
+.pill.ok, .pill.none { color: var(--good); } .pill.warn { color: var(--warn); } .pill.fail { color: var(--bad); } .pill.fam { color: var(--muted); }
+.player q { font-family: var(--display); font-size: 19px; font-weight: 600; line-height: 1.35; quotes: "“" "”"; }
+.player .why { font-size: 14px; color: var(--muted); }
+.player .nomotion { aspect-ratio: 854 / 480; max-width: 100%; display: grid; place-items: center; text-align: center; padding: 20px; color: var(--muted); background: repeating-linear-gradient(135deg, var(--surface) 0 10px, var(--bg) 10px 11px); font-size: 14px; }
+
+.fails { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 20px; }
+@media (max-width: 760px) { .fails { grid-template-columns: 1fr; } }
+.fcard { padding: 16px; display: grid; gap: 10px; align-content: start; min-width: 0; border: 1px solid var(--line); background: var(--surface); border-radius: 4px; }
+.fcard header { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+.fcard header b { font-family: var(--display); font-size: 17px; }
+.fcard header span { font: 500 20px var(--mono); color: var(--bad); }
+.fcard.warn header span { color: var(--warn); }
+.fcard.warn { grid-column: 1 / -1; }
+.fcard p { font-size: 14px; color: var(--muted); }
+.fcard .links { display: flex; flex-wrap: wrap; gap: 6px; }
+.fcard .links button { font: 500 12px var(--mono); padding: 3px 8px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 3px; cursor: pointer; }
+.fcard .links button:hover { border-color: var(--accent); }
+
+/* ---------- suitcase ---------- */
+.spec { display: flex; flex-wrap: wrap; gap: 0; border: 1.5px solid var(--ink); background: var(--surface); }
+.spec div { padding: 10px 14px; border-right: 1px solid var(--line); display: grid; gap: 2px; flex: 1 1 140px; }
+.spec div:last-child { border-right: 0; }
+.spec b { font-family: var(--mono); font-weight: 500; font-size: 14.5px; }
+.duo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 18px; }
+@media (max-width: 760px) { .duo { grid-template-columns: 1fr; } }
+.duo figure { margin: 0; border: 1.5px solid var(--ink); background: var(--surface); min-width: 0; }
+.duo video { display: block; width: 100%; max-width: 100%; aspect-ratio: 16 / 9; background: var(--video-bg); }
+.duo figcaption { padding: 12px 14px; display: grid; gap: 6px; }
+.duo figcaption .row { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.duo figcaption b { font-family: var(--display); font-size: 17px; }
+.duo dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 4px 0 0; font-size: 13px; }
+.duo dt { color: var(--muted); font-size: 12px; }
+.duo dd { margin: 0; font-family: var(--mono); font-size: 13.5px; }
+.gauge { margin-top: 18px; padding: 16px 16px 10px; border: 1px solid var(--line); background: var(--surface); border-radius: 4px; display: grid; gap: 6px; }
+.gauge svg { width: 100%; height: auto; display: block; overflow: visible; }
+.gauge svg text { font-family: var(--mono); font-size: 11px; fill: var(--muted); }
+.gauge svg text.strong { fill: var(--ink); font-weight: 500; }
+
+/* ---------- real world, limits, cite ---------- */
+.realbox { border: 1.5px solid var(--ink); background: var(--surface); }
+.runtabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-bottom: 1.5px solid var(--ink); }
+@media (max-width: 640px) { .runtabs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.runtabs button { all: unset; box-sizing: border-box; cursor: pointer; padding: 12px 16px 11px; display: grid; gap: 2px; border-right: 1px solid var(--line); border-bottom: 3px solid transparent; min-width: 0; }
+.runtabs button:last-child { border-right: 0; }
+@media (max-width: 640px) { .runtabs button:nth-child(2) { border-right: 0; } .runtabs button:nth-child(-n+2) { border-bottom-color: var(--line); } }
+.runtabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.runtabs b { font-family: var(--display); font-size: 18px; }
+.runtabs span { font-size: 13px; color: var(--muted); }
+.runtabs button[aria-selected="true"] { background: var(--accent-soft); border-bottom-color: var(--accent); }
+.realbox video { display: block; width: 100%; max-width: 100%; aspect-ratio: 16 / 9; background: var(--video-bg); }
+.realmeta { padding: 14px 20px; border-top: 1.5px solid var(--ink); }
+@media (max-width: 760px) { .realmeta { padding: 14px 16px; } }
+.realmeta .keys { display: flex; flex-wrap: wrap; gap: 8px 26px; font-size: 13.5px; }
+.realmeta .keys span { display: flex; gap: 10px; align-items: center; }
+.realmeta .keys i { flex: none; width: 28px; height: 0; border-top: 3px solid var(--good); }
+.realmeta .keys i.dash { border-top-style: dashed; }
+.realmeta .keys i.box { width: 16px; height: 12px; border: 2px solid var(--good); }
+.realmeta .keys i.or { border-top: 5px solid #BF5700; }
+.todo-box { border: 2px dashed var(--line); padding: 26px 22px; display: grid; gap: 12px; background: var(--surface); border-radius: 4px; }
+.todo-box h3 { font-size: 20px; }
+.todo-box ul { margin: 0; padding-left: 20px; display: grid; gap: 4px; color: var(--muted); }
+.cols2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; }
+@media (max-width: 760px) { .cols2 { grid-template-columns: 1fr; } }
+.cols2 ul { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+.cols2 > div { display: grid; gap: 12px; align-content: start; min-width: 0; }
+.bib { position: relative; }
+.bib pre { margin: 0; font-family: var(--mono); font-size: 13px; background: var(--surface); border: 1.5px solid var(--ink); padding: 18px; overflow-x: auto; line-height: 1.6; }
+.bib button { position: absolute; top: 10px; right: 10px; }
+
+/* ---------- plan ---------- */
+.plan { margin-top: 64px; border-top: 3px double var(--note-line); padding-top: 36px; display: grid; gap: 22px; }
+.plan table { border-collapse: collapse; width: 100%; min-width: 680px; font-size: 14px; }
+.plan .tw { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 4px; }
+.plan th, .plan td { padding: 10px 14px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+.plan thead th { font: 500 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.plan tr:last-child td { border-bottom: 0; }
+.st { font: 500 11.5px var(--mono); white-space: nowrap; }
+.st.ready { color: var(--good); } .st.partial { color: var(--warn); } .st.missing { color: var(--bad); }
+.plan ol { margin: 0; padding-left: 22px; display: grid; gap: 8px; max-width: 80ch; }
+footer { padding-block: 40px 56px; color: var(--muted); font-size: 13px; }
+.btn.sm { font-size: 12.5px; padding: 5px 10px; border-width: 1px; }
+.topbar .pbtn { font: 500 13px var(--body); color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; cursor: pointer; white-space: nowrap; display: inline-flex; gap: 6px; align-items: center; }
+.topbar .pbtn span { font-family: var(--mono); font-size: 12px; color: var(--accent); }
+.topbar .pbtn:hover { border-color: var(--accent); }
+.pd-scrim { position: fixed; inset: 0; background: rgba(10,14,16,.42); z-index: 40; }
+.pdrawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(760px, 100%); z-index: 41; background: var(--surface); border-left: 1.5px solid var(--ink); display: flex; flex-direction: column; box-shadow: -12px 0 32px rgba(0,0,0,.18);
+  padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); padding-right: env(safe-area-inset-right, 0px); }
+@media (max-width: 640px) { .pdrawer { border-left: 0; overflow-y: auto; overscroll-behavior: contain; } .pdrawer .pd-body { flex: none; overflow: visible; } }
+.pd-head { display: flex; justify-content: space-between; align-items: start; gap: 12px; padding: 16px 18px 10px; }
+.pd-head h3 { font-size: 21px; margin-top: 4px; }
+.pd-close { font: 500 18px var(--body); width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; flex: none; }
+.pd-close:hover { border-color: var(--accent); }
+.pd-runs, .pd-files { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 18px 10px; }
+.pd-files { border-bottom: 1px solid var(--line); }
+.pd-files .chip[aria-pressed="true"] { border-color: var(--accent); color: var(--ink); background: var(--accent-soft); }
+.pd-task { margin: 12px 18px 0; padding: 12px 14px; border: 1px solid var(--accent); border-left-width: 4px; border-radius: 4px; background: var(--accent-soft); display: grid; gap: 4px; font-size: 14px; }
+.pd-task q { font-family: var(--display); font-size: 17px; font-weight: 600; line-height: 1.35; quotes: "“" "”"; }
+.pd-task small { color: var(--muted); font-size: 12.5px; }
+.pd-meta { margin: 12px 18px 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 14px; font-size: 13px; }
+.pd-meta dt { font-family: var(--mono); font-size: 11.5px; color: var(--muted); padding-top: 2px; }
+.pd-meta dd { margin: 0; }
+.pd-tools { display: flex; gap: 6px; justify-content: space-between; align-items: center; padding: 12px 18px 10px; border-bottom: 1px solid var(--line); }
+.pd-tools .mono { color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+.pd-tools div { display: flex; gap: 6px; flex: none; }
+.pd-body { flex: 1; overflow-y: auto; padding: 6px 22px 40px; font-size: 14.5px; line-height: 1.6; min-height: 0; overscroll-behavior: contain; }
+.pd-body h1 { font-size: 20px; margin: 18px 0 8px; }
+.pd-body h2 { font: 500 12px var(--mono); letter-spacing: .09em; text-transform: uppercase; color: var(--accent); margin: 26px 0 8px; padding-top: 14px; border-top: 1px solid var(--line); }
+.pd-body h3 { font-size: 15px; margin: 18px 0 6px; }
+.pd-body p, .pd-body ul, .pd-body ol { margin: 0 0 10px; max-width: 75ch; }
+.pd-body ul, .pd-body ol { padding-left: 22px; }
+.pd-body li { margin-bottom: 4px; }
+.pd-body code { font-family: var(--mono); font-size: .88em; background: var(--bg); border: 1px solid var(--line); border-radius: 3px; padding: 0 4px; overflow-wrap: anywhere; }
+.pd-body pre { background: var(--bg); border: 1px solid var(--line); border-radius: 4px; padding: 10px 12px; overflow-x: auto; }
+.pd-body pre code { border: 0; padding: 0; background: none; overflow-wrap: normal; }
+.pd-body pre.raw { white-space: pre-wrap; font: 12.5px/1.6 var(--mono); }
+.pd-body table { border-collapse: collapse; font-size: 13px; display: block; overflow-x: auto; margin-bottom: 12px; }
+.pd-body th, .pd-body td { border: 1px solid var(--line); padding: 5px 8px; text-align: left; vertical-align: top; }
+.pd-body mark { background: var(--note-bg); color: var(--note-ink); padding: 0 2px; }
+.pd-index { display: grid; gap: 10px; padding-top: 14px; }
+.pd-index button { all: unset; box-sizing: border-box; cursor: pointer; border: 1px solid var(--line); border-radius: 4px; padding: 12px 14px; display: grid; gap: 3px; }
+.pd-index button:hover, .pd-index button:focus-visible { border-color: var(--accent); }
+.pd-index b { font-family: var(--display); font-size: 16px; }
+.pd-index span { font-size: 13px; color: var(--muted); }
+</style>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="#top">Sprout · Twin Planning</a>
+    <nav aria-label="Sections"><ol>
+      <li><a href="#method"><span>1</span>Method</a></li>
+      <li><a href="#twins"><span>2</span>Twins</a></li>
+      <li><a href="#case"><span>3</span>Example</a></li>
+      <li><a href="#results"><span>4</span>Results</a></li>
+      <li><a href="#real"><span>5</span>Sim to real</a></li>
+    </ol></nav>
+    <button class="pbtn" type="button" data-prompt="index" aria-haspopup="dialog"><span>{ }</span>Prompts</button>
+  </div>
+</header>
+
+<main id="top">
+<div class="wrap hero">
+  <div class="sheet">
+    <div class="sheet-main">
+      <span class="label">CoRL 2026 · Late-breaking results Submission</span>
+      <h1>Building a <em>Way Up</em>: Agentic Real2Sim2Real for Humanoids</h1>
+      <div class="authors">
+        <span>Jayaram Reddy<sup>1,*</sup></span><span>Caden Page<sup>1,*</sup></span><span>Bowen Jiang<sup>1</sup></span><span>Yihan Li<sup>1</sup></span><span>Cosmo Wu<sup>1</sup></span><span>Skand Peri<sup>1</sup></span><span>Georgios Pavlakos<sup>1</sup></span><span>Roberto Martín-Martín<sup>1</sup></span>
+      </div>
+      <div class="affil"><span><sup>1</sup>The University of Texas at Austin</span><span><sup>*</sup>Equal contribution</span></div>
+    </div>
+    <div class="sheet-media">
+      <div class="vid">
+        <video id="heroVid" src="assets/v/hero_SA-04_slow.mp4" poster="assets/p/hero_SA-04.jpg" muted loop playsinline autoplay preload="auto" aria-label="Sprout pushes a crate to the fridge, climbs it and reaches the first-aid kit, in the apartment twin rendered in Blender"></video>
+        <div class="vid-cap"><q>Get the first-aid kit from the top of the fridge.</q><button type="button" id="pauseAll">Pause</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="question">
+    <span class="q" aria-hidden="true">?</span>
+    <p>Can a frontier vision-language model build a simulation of a real room from a phone scan, then plan in it well enough for a humanoid to act?</p>
+  </div>
+</div>
+
+<!-- ===================== 1 METHOD ===================== -->
+<section id="method" class="wrap">
+  <div class="sec-head">
+    <span class="label"><b>1</b> · Method</span>
+    <h2>From a phone scan to a humanoid plan</h2>
+  </div>
+  <div class="pipe" role="tablist" aria-label="Pipeline stages">
+    <button role="tab" aria-selected="true" data-stage="0"><span class="n">01 · Real</span><span class="t">Scan</span><span class="s">iPhone RGB + LiDAR walkthrough</span></button>
+    <button role="tab" aria-selected="false" data-stage="1"><span class="n">02 · Sim</span><span class="t">Reconstruct</span><span class="s">Astra writes the twin</span></button>
+    <button role="tab" aria-selected="false" data-stage="2"><span class="n">03 · Plan</span><span class="t">Plan in the twin</span><span class="s">Language → grounded plan</span></button>
+    <button role="tab" aria-selected="false" data-stage="3"><span class="n">04 · Real</span><span class="t">Execute</span><span class="s">Skills on Sprout</span></button>
+  </div>
+  <div class="stage" id="stage" role="tabpanel" aria-live="polite"></div>
+</section>
+
+<!-- ===================== 2 TWINS ===================== -->
+<section id="twins" class="wrap">
+  <div class="sec-head">
+    <span class="label"><b>2</b> · Digital twins</span>
+    <h2>Three real rooms, rebuilt for physics</h2>
+    <p class="muted prose">Each twin loads in MuJoCo and Isaac Sim with movable furniture, opening doors and drawers, and estimated masses. Each pair below shows a scan keyframe and the twin rendered from that same camera. Drag across the image to compare.</p>
+  </div>
+  <div class="pairs">
+    <figure class="cmp" id="cmpMain">
+      <div class="cmp-frame" style="--x:50%">
+        <img class="bot" alt="">
+        <img class="top" alt="">
+        <span class="tag l">Real</span><span class="tag r">Twin</span><span class="rule"></span>
+      </div>
+      <input type="range" min="0" max="100" value="50" id="cmpRange" aria-label="Slide between the real photo and the twin render">
+    </figure>
+    <div class="pair-side">
+      <div class="pair-list" aria-label="Viewpoints" id="pairList"></div>
+      <div class="pair-meta" id="pairMeta"></div>
+    </div>
+  </div>
+
+  <h3 style="margin:36px 0 14px">Explore a twin</h3>
+  <div class="twin">
+    <div class="twin-view" id="twinView">
+      <canvas id="twinCanvas" aria-label="Interactive physics view of the selected digital twin. Drag objects to move them, drag empty space to orbit, scroll to zoom."></canvas>
+      <div class="twin-hover" id="twinHover" hidden></div>
+      <div class="twin-load" id="twinLoad">Loading twin…</div>
+      <div class="twin-help" id="twinHelp">Drag objects to push them · Shift-drag to lift · drag empty space to orbit</div>
+      <div class="twin-tools" id="twinTools"><button type="button" id="physPause" aria-pressed="false" disabled>Pause</button><button type="button" class="primary" id="physReset" disabled>Reset room</button></div>
+    </div>
+    <div class="twin-side">
+      <div class="tabs" role="tablist" aria-label="Rooms" id="twinTabs">
+        <button role="tab" aria-selected="true" data-room="apt">Apartment</button>
+        <button role="tab" aria-selected="false" data-room="test">Testing area</button>
+        <button role="tab" aria-selected="false" data-room="lab">Lab</button>
+      </div>
+      <div class="twin-info" id="twinInfo"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 3 CASE ===================== -->
+<section id="case" class="wrap">
+  <div class="sec-head">
+    <span class="label"><b>3</b> · Worked example</span>
+    <h2>The kit is on the fridge. Sprout can't reach it.</h2>
+    <p class="muted prose">Astra finds a crate in the apartment twin, plans a push that parks it at the fridge, then a climb and a reach. Sprout carries it out as a whole-body motion. Select a step to jump to it.</p>
+  </div>
+  <div class="case">
+    <video id="caseVid" src="assets/v/apt_v4_SA-04.mp4" poster="assets/p/apt_v4_SA-04.jpg" muted playsinline controls preload="metadata"></video>
+    <div class="case-side">
+      <div class="case-cmd"><span class="label">SA-04 · apartment · crate climb · success</span><q>Get the first-aid kit from the top of the fridge.</q></div>
+      <ol class="chap" id="chap"></ol>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 4 RESULTS ===================== -->
+<section id="results" class="wrap">
+  <div class="sec-head">
+    <span class="label"><b>4</b> · Results in simulation</span>
+    <p class="muted prose"><b>Plan + motion</b> uses Sprout's own model (25 kg, 1.13 m) and grades the plan plus Astra's whole-body motion: contacts, support, balance, penetration and end pose. <b>Plan only</b> grades just the plan, for a stand-in robot (45 kg, 0.70 m hand reach). Astra named the right object or place on every command in both runs.</p>
+  </div>
+  <div class="sumtable"><table>
+    <thead><tr><th>Room</th><th>Plan + motion · Sprout</th><th>Plan only · stand-in robot</th></tr></thead>
+    <tbody id="sumBody"></tbody>
+  </table></div>
+
+  <div class="explorer" id="explorer">
+    <div class="grid-side">
+      <div class="glegend">
+        <span><span class="cell ok"></span>success</span>
+        <span><span class="cell none"></span>correctly answered "impossible"</span>
+        <span><span class="cell warn"></span>valid, not ideal</span>
+        <span><span class="cell fail"></span>failed</span>
+      </div>
+      <div class="filters" id="famFilters" aria-label="Filter by task type"></div>
+      <div id="grids" style="display:grid;gap:18px"></div>
+    </div>
+    <div class="player" id="player" aria-live="polite"></div>
+  </div>
+
+  <h3 style="margin:40px 0 0">Where it went wrong</h3>
+  <p class="muted prose" style="margin-top:8px">Failures cluster around support safety and clearances, not grounding or geometry.</p>
+  <div class="fails" id="fails"></div>
+</section>
+
+<!-- ===================== 6 REAL ===================== -->
+<section id="real" class="wrap">
+  <div class="sec-head">
+    <span class="label"><b>5</b> · Sim to real</span>
+  </div>
+  <p class="muted prose" style="margin:-10px 0 22px">Four complete closed-loop runs of the suitcase push. Three fixed cameras track AprilTags on Sprout and the suitcase; the twin on the left is rendered in Blender from those tracked poses, in sync with the real views on the right.</p>
+  <div class="realbox">
+    <div class="runtabs" role="tablist" aria-label="Real runs" id="runTabs"></div>
+    <video id="realVid" muted playsinline controls preload="metadata"></video>
+    <div class="realmeta">
+      <div class="keys">
+        <span><i class="dash"></i>Planned walk</span>
+        <span><i></i>Planned suitcase push</span>
+        <span><i class="box"></i>Goal: 10 cm in front of the dishwasher</span>
+        <span><i class="or"></i>Sprout's tracked path</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+<div class="pd-scrim" id="pdScrim" hidden></div>
+<aside class="pdrawer" id="pdrawer" role="dialog" aria-modal="true" aria-labelledby="pdTitle" hidden>
+  <div class="pd-head">
+    <div><span class="label" id="pdEyebrow">Planner prompts</span><h3 id="pdTitle">Prompts</h3></div>
+    <button type="button" class="pd-close" id="pdClose" aria-label="Close prompts">✕</button>
+  </div>
+  <div class="pd-runs" id="pdRuns" aria-label="Run"></div>
+  <div class="pd-files" id="pdFiles" aria-label="Prompt file"></div>
+  <div class="pd-task" id="pdTask" hidden></div>
+  <dl class="pd-meta" id="pdMeta"></dl>
+  <div class="pd-tools" id="pdTools"><span class="mono" id="pdFile"></span><div><button type="button" class="chip" id="pdRaw" aria-pressed="false">Raw</button><button type="button" class="chip" id="pdCopy">Copy</button></div></div>
+  <div class="pd-body" id="pdBody"></div>
+</aside>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script>
+(() => {
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+
+/* ---------- hero video / pause all ---------- */
+const hero = $("#heroVid"), pa = $("#pauseAll");
+if (reduce) { hero.removeAttribute("autoplay"); hero.pause(); pa.textContent = "Play"; }
+pa.onclick = () => {
+  if (hero.paused) { hero.play().catch(() => {}); pa.textContent = "Pause"; }
+  else { $$("video").forEach(v => v.pause()); pa.textContent = "Play"; }
+};
+
+/* ---------- active nav ---------- */
+const navLinks = $$(".topbar nav a");
+const io = new IntersectionObserver(es => es.forEach(e => {
+  if (e.isIntersecting) navLinks.forEach(a => a.classList.toggle("on", a.getAttribute("href") === "#" + e.target.id));
+}), { rootMargin: "-45% 0px -50% 0px" });
+$$("main > section[id]").forEach(s => io.observe(s));
+
+/* ---------- 1 method stepper ---------- */
+const STAGES = [
+  { txt: `<h3>Scan a room</h3><p>Walk through the room with an iPhone (RGB + LiDAR).</p>`,
+    fig: "scan" },
+  { txt: `<h3>Astra writes a physics-ready twin</h3><p>Astra reads the scan and writes the room as a simulation: walls and fixed furniture, movable bodies with estimated masses, and articulated doors and drawers. The result exports to MuJoCo and Isaac Sim, and is checked by dropping every body under gravity for 5 s.</p>`,
+    fig: "twin" },
+  { txt: `<h3>Plan against the twin's geometry</h3><p>Given a command like "get the first-aid kit from the top of the fridge", Astra works out which object or place is meant. It then decides what to move, stand on or carry, and where the robot stands. It runs its own checks in MuJoCo before answering, and says "impossible" when nothing in the room makes the goal reachable.</p>
+      <dl><dt>Output</dt><dd>Walks, object moves, supports, reach stance; with motion, also a whole-body joint trajectory</dd><dt>Graded on</dt><dd>Grounding, plan validity, contacts, balance, penetration ≤ 2 cm on ≤ 2 % of frames</dd></dl>
+      <div><button type="button" class="btn sm" data-prompt="v4:v4r" aria-haspopup="dialog">Read the planner prompt</button></div>`,
+    fig: `<div class="steps4">${[["step1","1 Approach crate"],["step2","2 Push to fridge"],["step3","3 Climb onto crate"],["step4","4 Reach toward kit"]].map(([f,c]) => `<figure><img src="assets/img/${f}.jpg" alt="${c}" loading="lazy"><figcaption>${c}</figcaption></figure>`).join("")}</div>
+      <figure><img src="assets/img/plan_topdown.jpg" alt="Top-down view of the apartment twin: the crate's path from 1 to 4, ending under the first-aid kit on the fridge" loading="lazy" style="max-height:340px;object-fit:cover;object-position:60% 50%"><figcaption>The same plan from above. Example: "Get the first-aid kit from the top of the fridge" (Fig. 1).</figcaption></figure>` },
+  { txt: `<h3>Run the plan on Sprout</h3><p>Each plan step maps to one of Sprout's skills: walking and pushing with the lower leg. Object poses come from three fixed RealSense D405 cameras tracking AprilTags.</p>
+      <dl><dt>Robot</dt><dd>Sprout humanoid</dd><dt>First task</dt><dd>Suitcase push to the dishwasher</dd></dl>`,
+    fig: `<figure><video src="assets/real/real_C4.mp4" poster="assets/real/real_C4.jpg" muted loop playsinline controls ${reduce ? "" : "autoplay"} preload="metadata" style="width:100%;max-width:100%;display:block;aspect-ratio:16/9;background:var(--video-bg)" aria-label="Real run C4"></video><figcaption>Real run C4: the twin rendered from the tracked poses (left) and the three tracking cameras (right). <a href="#real">All four runs</a>.</figcaption></figure>` },
+];
+const stageEl = $("#stage"), stageBtns = $$(".pipe button");
+const SCANS = { apt: ["apartment", "Apartment", 119], test: ["testing", "Testing area", 46], lab: ["lab", "Lab", 57] };
+let stageRoom = "apt", miniViewer = null;
+const chips = id => `<div class="roomchips" role="group" aria-label="Room">${Object.entries(SCANS).map(([k, v]) => `<button type="button" class="chip" data-r="${k}" aria-pressed="${k === stageRoom}">${v[1]}</button>`).join("")}</div>`;
+function stageFig(kind) {
+  if (kind === "scan") {
+    const [f, n, kf] = SCANS[stageRoom];
+    return `${chips()}<div class="scanvid"><video src="assets/scan/${f}.mp4" poster="assets/scan/${f}.jpg" muted loop playsinline controls ${reduce ? "" : "autoplay"} preload="metadata" aria-label="${n} scan keyframes"></video></div>`;
+  }
+  if (kind === "twin") {
+    const r = ROOMS[stageRoom];
+    return `${chips()}<div class="mini-twin" id="miniTwin"><canvas aria-label="${r.name} twin in 3D. Drag to rotate, scroll or pinch to zoom."></canvas><div class="twin-hover" hidden></div><div class="twin-load">Loading twin…</div><div class="twin-help">Drag to rotate · scroll to zoom</div></div>`;
+  }
+  return kind;
+}
+let curStage = 0;
+const showStage = i => {
+  curStage = i;
+  if (miniViewer) { miniViewer.destroy(); miniViewer = null; }
+  stageBtns.forEach((b, j) => b.setAttribute("aria-selected", j === i));
+  stageEl.innerHTML = `<div class="txt">${STAGES[i].txt}</div><div style="min-width:0;display:grid;gap:10px;align-content:start">${stageFig(STAGES[i].fig)}</div>`;
+  $$(".roomchips .chip", stageEl).forEach(c => c.onclick = () => { stageRoom = c.dataset.r; showStage(curStage); });
+  if (STAGES[i].fig === "twin") {
+    const box = $("#miniTwin");
+    if (window.TwinViewer) miniViewer = new TwinViewer(box, { autoRotate: !reduce, room: stageRoom });
+    else $(".twin-load", box).textContent = "3D viewer could not load.";
+  }
+};
+stageBtns.forEach((b, i) => {
+  b.onclick = () => showStage(i);
+  b.onkeydown = e => { if (e.key === "ArrowRight" || e.key === "ArrowLeft") { const n = (i + (e.key === "ArrowRight" ? 1 : 3)) % 4; stageBtns[n].focus(); showStage(n); } };
+});
+
+/* ---------- 2 real vs twin ---------- */
+const PAIRS = [
+  { k: "kitchen", room: "Apartment", view: "Kitchen counter", pts: 11, err: 20, note: "Counter, shelves, dishwasher, bin and fridge line up. The twin's shelves sit slightly lower than the real ones." },
+  { k: "lounge", room: "Apartment", view: "Lounge", pts: 8, err: 35, note: "Table, partitions and window line up. The twin's armchairs are boxier and a little larger than the real ones." },
+  { k: "test1", room: "Testing area", view: "Table and crate", pts: 17, err: 17, note: "Table, crate, chair with the yellow box, black cabinet and shelving all line up." },
+  { k: "test3", room: "Testing area", view: "TV wall", pts: 9, err: 16, note: "TV on its stand, shelving, flatbed cart, cabinet and the chair line up. The twin's chair is a simpler shape." },
+  { k: "lab1", room: "Lab", view: "Lounge corner", pts: 7, err: 31, note: "Window, bike, round table with the wooden box, armchairs and storage cabinet line up. The twin adds a third armchair that isn't in the scan frame, and it has no walls (LiteReality reconstruction)." },
+];
+let pairI = 0;
+const cmp = $("#cmpMain"), cfr = $(".cmp-frame", cmp), crg = $("#cmpRange");
+const setX = v => { cfr.style.setProperty("--x", v + "%"); crg.value = v; };
+function showPair(i) {
+  pairI = i; const p = PAIRS[i];
+  $(".top", cfr).src = `assets/pairs/${p.k}_real.jpg`; $(".top", cfr).alt = `${p.room}, ${p.view}: real scan frame`;
+  $(".bot", cfr).src = `assets/pairs/${p.k}_twin.jpg`; $(".bot", cfr).alt = `${p.room}, ${p.view}: twin rendered from the same camera`;
+  $$("#pairList button").forEach(b => b.setAttribute("aria-selected", +b.dataset.i === i));
+  $("#pairMeta").innerHTML = `<dl><dt>View</dt><dd>${p.room} · ${p.view}</dd></dl><p class="muted">${p.note}</p>`;
+}
+$("#pairList").innerHTML = PAIRS.map((p, i) => (i === 0 || PAIRS[i - 1].room !== p.room ? `<h4>${p.room}</h4>` : "") + `<button type="button" aria-selected="false" aria-pressed="false" data-i="${i}"><img src="assets/pairs/${p.k}_thumb.jpg" alt=""><span><b>${p.view}</b></span></button>`).join("");
+$$("#pairList button").forEach(b => b.onclick = () => showPair(+b.dataset.i));
+crg.oninput = () => setX(crg.value);
+let cdrag = false;
+const cat = e => { const b = cfr.getBoundingClientRect(); setX(Math.max(0, Math.min(100, ((e.clientX - b.left) / b.width) * 100)).toFixed(1)); };
+cfr.onpointerdown = e => { cdrag = true; cfr.setPointerCapture(e.pointerId); cat(e); };
+cfr.onpointermove = e => { if (cdrag) cat(e); };
+cfr.onpointerup = cfr.onpointercancel = () => cdrag = false;
+showPair(0);
+
+/* ---------- 3 case chapters ---------- */
+const CH = [[0, "Approach crate", "Find a movable support"], [60, "Push to fridge", "Place the support below the target"], [101, "Climb onto crate", "Raise the robot's stance"], [106, "Reach toward kit", "Access the elevated target"]];
+const cv = $("#caseVid"), chap = $("#chap");
+chap.innerHTML = CH.map(([t, a, b], i) => `<li><button type="button" data-t="${t}"><span class="n">${i + 1}</span><span><b>${a}</b><span class="d">${b}</span></span><span class="t">${Math.floor(t / 60)}:${String(t % 60).padStart(2, "0")}</span></button></li>`).join("");
+const chBtns = $$("button", chap);
+chBtns.forEach(b => b.onclick = () => { cv.currentTime = +b.dataset.t + 0.05; cv.play().catch(() => {}); });
+cv.addEventListener("timeupdate", () => {
+  let k = 0; CH.forEach(([t], i) => { if (cv.currentTime >= t) k = i; });
+  chBtns.forEach((b, i) => b.classList.toggle("on", i === k));
+});
+chBtns[0].classList.add("on");
+
+/* ---------- 4 results ---------- */
+const ENVS = [
+  { key: "apt", name: "Apartment", what: "kitchen, lounge, desks · Astra twin",
+    v4: [
+      ["SA-01","staircase","ok","Get the camera from the bookcase; it is on the highest shelf below the top."],
+      ["SA-02","step","ok","Get the box of spare fuses from the top of the hard case standing next to the tall pantry cupboard.","uses one more object than needed"],
+      ["SA-03","staircase","ok","Get the first-aid kit from the top of the fridge."],
+      ["SA-04","crate climb","ok","Get the first-aid kit from the top of the fridge."],
+      ["SA-06","hand","ok","Get the jar from the kitchen counter."],
+      ["SA-07","step","ok","Get the toolbox from the bookcase; it is on the third shelf from the floor."],
+      ["SA-09","crate climb","ok","Get the camera from the bookcase; it is on the highest shelf below the top."],
+      ["SA-10","hand","ok","Get the camera from the upper of the two long desks in the middle of the room; it is at the desk's left-hand edge."],
+      ["SA-12","step","ok","Get the board game box from the bookcase; it is on the third shelf from the floor, at the right-hand end."],
+      ["SA-13","hand","ok","Get the phone lying at the front edge of the kitchen counter."],
+      ["PA-01","place","fail","Move the TV remote on the coffee table to the right-hand end of the coffee table.","plan correct; arm 5.0 cm into a pillar while walking"],
+      ["PA-02","place","ok","Take the apple from the lower of the two long desks and put it next to the camera on the upper long desk."],
+      ["PA-03","place","fail","Put the TV remote from the coffee table on the round table.","plan correct; arm 6.0 cm into the same pillar"],
+      ["PA-04","place","ok","Move the jar from the kitchen counter to the coffee table."],
+      ["PA-07","place","fail","Put the apple from the coffee table at the lower end of the lower long desk.","plan correct; arm 5.7 cm into the same pillar"],
+    ],
+    r2: [
+      ["RA-01","hand","ok","Get the jar from the lower of the two wall shelves above the kitchen counter."],
+      ["RA-02","step","ok","Get the box of spare fuses from the top of the tall pantry cupboard."],
+      ["RA-03","staircase","fail","Get the toolbox from the top of the tall pantry cupboard; take it by its handle.","staircase stands on the round table (unsafe support)"],
+      ["RA-04","step","ok","Get the first-aid kit from the top of the fridge."],
+      ["RA-05","step","ok","Get the speaker from the top of the bookcase."],
+      ["RA-06","impossible","ok","Get the box of spare fuses from the top of the tall pantry cupboard.","no stool or crate in this variant; correctly answered impossible"],
+      ["RA-07","clear + step","warn","Get the camera from the top of the bookcase; it is in the back corner on the fridge side, against the wall.","steps on the coffee table"],
+      ["TA-02","step","ok","Get the first-aid kit from the top of the fridge."],
+      ["TA-03","staircase","ok","Get the toolbox from the top of the tall pantry cupboard; take it by its handle."],
+      ["TA-05","step","warn","Get the speaker from the top of the bookcase.","steps on the coffee table"],
+      ["TA-08","carry only","ok","Get the box of spare fuses from the top of the tall pantry cupboard. The floor has just been polished: do not drag or slide anything; carry whatever you move."],
+      ["TA-09","carry only","ok","Get the toolbox from the top of the tall pantry cupboard; take it by its handle. The floor has just been polished: do not drag or slide anything; carry whatever you move."],
+      ["A-Q2-02","move furniture","ok","Move Roundtable0 so that it ends at pose [2.4, -3.6, 0] (within 0.15 m), so the robot can stand in the lounge corner."],
+    ] },
+  { key: "lab", name: "Lab", what: "",
+    v4: [
+      ["SL-01","step","ok","Get the box of markers from the top of the tall storage cabinet on the right."],
+      ["SL-03","crate climb","ok","Get the box of markers from the top of the tall storage cabinet on the right."],
+      ["SL-04","hand","ok","Get the stack of notebooks from the lower of the two desks along the left-hand wall; it is at the desk's upper end on the map."],
+      ["SL-05","step","ok","Get the stapler from the top of the tall storage cabinet on the right."],
+    ],
+    r2: [
+      ["RL-01","hand","ok","Get the box of markers from the top of the tall storage cabinet on the right."],
+      ["RL-02","hand","ok","Get the small potted plant from the top of the curtain box above the left-hand window."],
+      ["TL-01","tool use","fail","Open the safety latch at the very top of the left-hand window.","stands on Chair2 (unsafe support)"],
+      ["TL-05","tool use","ok","Take down the clock on the left-hand wall, between the two desks."],
+      ["L-Q1-03","make room","ok","The robot must be able to stand behind the left-hand desk (Table3), in the gap between it and the left wall, level with the middle of the desk."],
+      ["L-Q1-07","make room","warn","The robot must be able to stand in front of the right-hand desk (Table5), at its user side, facing the middle of the desk.","moves 2 objects where 1 is enough"],
+      ["L-Q1-09","make room","ok","The robot must be able to stand behind the storage cabinet (Storage0), in the gap between it and the right-hand wall, level with the middle of the cabinet."],
+      ["L-Q2-04","move furniture","ok","Move Chair4 so that it ends at pose [-0.45, -1.4, 0] (within 0.15 m and 15°), moving anything in the way first."],
+    ] },
+  { key: "test", name: "Testing area", what: "robot testing area · Astra twin",
+    v4: [
+      ["ST-01","staircase","none","Get the drone from the taller black shelving unit at the top of the room; it is on the middle shelf, pushed to the back.","answered impossible; correct after regrading (our oracle's stair was wrong)"],
+      ["ST-02","crate climb","none","Get the drone from the taller black shelving unit at the top of the room; it is on the middle shelf, pushed to the back.","answered impossible; correct after regrading"],
+      ["ST-03","hand","ok","Get the multimeter from the long desk against the left-hand wall, just above the low drawer cabinet on the map."],
+      ["ST-05","step","ok","Get the battery pack from the black shelving unit at the top left; it is on the middle shelf, at the left-hand end.","uses one more object than needed"],
+      ["ST-06","step","ok","Get the headset from the taller black shelving unit at the top of the room; it is at the front of the middle shelf, at the right-hand end."],
+      ["ST-08","crate climb","ok","Get the battery pack from the black shelving unit at the top left; it is on the middle shelf, at the left-hand end."],
+      ["ST-09","crate climb","ok","Get the headset from the taller black shelving unit at the top of the room; it is at the front of the middle shelf, at the right-hand end."],
+      ["ST-10","hand","ok","Get the drone from the low table just below where Sprout starts."],
+      ["ST-11","step","ok","Get the box of screws from the taller black shelving unit at the top of the room; it is on the middle shelf, at the left-hand end.","uses one more object than needed"],
+      ["ST-12","hand","ok","Get the water bottle from the long desk against the left-hand wall."],
+      ["ST-13","hand","ok","Get the mug from the table near the lower left of the room."],
+      ["PT-01","place","ok","Move the mug on the table at the bottom of the room to that table's left-most corner."],
+      ["PT-02","place","ok","Move the multimeter on the long desk against the left-hand wall to the upper end of that desk."],
+      ["PT-03","place","ok","On the table near the lower left of the room, put the roll of tape just to the right of the multimeter."],
+      ["PT-04","place","ok","On the table at the bottom of the room, put the water bottle just to the right of the headset."],
+      ["PT-05","place","ok","Move the drone from the low table just below where Sprout starts onto the long desk against the left-hand wall."],
+      ["PT-06","place","ok","Move the mug on the table near the lower left of the room to that table's upper-most corner."],
+      ["PT-07","place","ok","On the table near the lower left of the room, put the roll of tape just above the multimeter (as seen on the map)."],
+      ["PT-08","place","ok","Take the roll of tape from the long desk against the left-hand wall and put it next to the mug on the table at the bottom of the room.","passes after a grader fix (voxel bug)"],
+      ["PT-09","place","ok","Put the water bottle from the long desk against the left-hand wall at the lower end of the table near the lower left of the room."],
+    ],
+    r2: [
+      ["RT-01","hand","ok","Get the multimeter from the long desk against the left-hand wall, just above the low drawer cabinet on the map."],
+      ["RT-02","hand","ok","Get the battery pack from the black shelving unit at the top left; it is on the middle shelf, at the left-hand end."],
+      ["RT-03","step","ok","Get the cable reel from the top of the open cabinet at the top of the room, between the two black shelving units."],
+      ["RT-04","step","ok","Get the headset from the taller black shelving unit at the top of the room; it is on the highest shelf below the top, at the right-hand end."],
+      ["RT-05","staircase","ok","Get the drone from the top of the black shelving unit at the top left of the room."],
+      ["RT-06","impossible","fail","Get the router from the top of the taller black shelving unit at the top of the room.","should be impossible; planned a 3rd step on Cart0 (9 kg, on wheels)"],
+      ["T-Q2-01","move furniture","ok","Move Crate0 so that it ends at pose [1.65, 3.95, 0] (within 0.15 m and 15°), moving anything in the way first."],
+      ["T-Q2-02","move furniture","ok","Move Table0 so that it ends at pose [-1.95, 3.45, 0] (within 0.15 m and 15°), moving anything in the way first."],
+      ["T-Q2-03","move furniture","ok","Move Cart2 so that it ends at pose [-1.4, 5.4, 0] (within 0.15 m and 15°), moving anything in the way first."],
+      ["T-Q2-04","move furniture","ok","Move Chair2 so that it ends at pose [1.6, 5.2, 0] (within 0.15 m and 15°), moving anything in the way first."],
+      ["T-Q2-05","carry","fail","Carry Chair0 (lift it and walk with it; it must not be slid) so that it ends at pose [-1.0, 4.6, 0].","collision while carrying Chair0"],
+      ["T-Q2-06","carry","ok","Carry Cart2 (lift it and walk with it; it must not be slid) so that it ends at pose [-1.2, 2.0, 0]."],
+    ] },
+];
+const RUNNAME = { v4: "Plan + motion", r2: "Plan only" };
+const WORD = { v4: { ok: "success", fail: "motion failed", none: "correct: impossible" }, r2: { ok: "correct", warn: "valid", fail: "wrong" } };
+const tally = rows => ({ n: rows.length, ok: rows.filter(r => r[2] === "ok" || r[2] === "none").length, warn: rows.filter(r => r[2] === "warn").length, fail: rows.filter(r => r[2] === "fail").length });
+const scoreCell = (t, word) => `<div class="score"><div class="num">${t.ok}<small> / ${t.n} ${word}</small></div>
+  <div class="bar" aria-hidden="true"><i class="ok" style="width:${t.ok / t.n * 100}%"></i><i class="warn" style="width:${t.warn / t.n * 100}%"></i><i class="fail" style="width:${t.fail / t.n * 100}%"></i></div></div>`;
+const sum = k => ENVS.reduce((a, e) => { const t = tally(e[k]); return { n: a.n + t.n, ok: a.ok + t.ok, warn: a.warn + t.warn, fail: a.fail + t.fail }; }, { n: 0, ok: 0, warn: 0, fail: 0 });
+$("#sumBody").innerHTML = ENVS.map(e => `<tr><td class="room"><b>${e.name}</b></td><td>${scoreCell(tally(e.v4), "succeed")}</td><td>${scoreCell(tally(e.r2), "correct")}</td></tr>`).join("") +
+  `<tr class="total"><td class="room"><b>All three rooms</b></td><td>${scoreCell(sum("v4"), "succeed")}</td><td>${scoreCell(sum("r2"), "correct")}</td></tr>`;
+
+const ALL = [];
+ENVS.forEach(e => ["v4", "r2"].forEach(k => e[k].forEach(r => ALL.push({ env: e.key, envName: e.name, run: k, id: r[0], fam: r[1], res: r[2], cmd: r[3], why: r[4] || "" }))));
+const famGroup = f => /climb|stair|step/.test(f) ? "climb" : /place/.test(f) ? "place" : /move|carry|room/.test(f) ? "rearrange" : /impossible/.test(f) ? "impossible" : "reach";
+const FAMS = [["all", "All tasks"], ["reach", "Reach by hand"], ["climb", "Step / climb"], ["place", "Pick and place"], ["rearrange", "Move furniture"], ["impossible", "Impossible"]];
+let fam = "all", sel = ALL.find(t => t.id === "SA-04");
+$("#famFilters").innerHTML = FAMS.map(([k, n]) => `<button type="button" class="chip" data-f="${k}" aria-pressed="${k === fam}">${n}</button>`).join("");
+$$("#famFilters .chip").forEach(b => b.onclick = () => { fam = b.dataset.f; $$("#famFilters .chip").forEach(c => c.setAttribute("aria-pressed", c === b)); drawGrids(); });
+const short = id => id.replace(/^[A-Z]+-?Q?\d?-?/, "").replace(/^0/, "") || id;
+function drawGrids() {
+  $("#grids").innerHTML = ENVS.map(e => {
+    const rows = ["v4", "r2"].map(k => {
+      const ts = ALL.filter(t => t.env === e.key && t.run === k && (fam === "all" || famGroup(t.fam) === fam));
+      return `<div class="runrow"><span class="label">${RUNNAME[k]}</span><div class="cells">${ts.length ? ts.map(t =>
+        `<button type="button" class="cell ${t.res}" data-k="${t.env}|${t.run}|${t.id}" aria-pressed="${t === sel}" title="${esc(t.id + " · " + t.fam + " · " + WORD[t.run][t.res])}" aria-label="${esc(t.id + ", " + t.fam + ", " + WORD[t.run][t.res])}">${t.res === "fail" ? "✕" : ""}</button>`).join("") : `<span class="muted" style="font-size:12.5px;padding-top:5px">none of this type</span>`}</div></div>`;
+    }).join("");
+    const a = tally(e.v4), b = tally(e.r2);
+    return `<div class="roomgrid"><h4>${e.name}<span>${a.ok}/${a.n} · ${b.ok}/${b.n}</span></h4>${rows}</div>`;
+  }).join("");
+  $$("#grids .cell").forEach(c => c.onclick = () => { const [en, ru, id] = c.dataset.k.split("|"); select(ALL.find(t => t.env === en && t.run === ru && t.id === id), true); });
+}
+function select(t, play) {
+  sel = t;
+  $$("#grids .cell").forEach(c => c.setAttribute("aria-pressed", c.dataset.k === `${t.env}|${t.run}|${t.id}`));
+  const src = `assets/v/${t.env}_${t.run}_${t.id}.mp4`;
+  const media = t.res === "none"
+    ? `<div class="nomotion">No motion: Astra answered that the item cannot be reached, which is correct.</div>`
+    : `<video src="${src}" poster="assets/p/${t.env}_${t.run}_${t.id}.jpg" muted playsinline controls preload="metadata" ${play ? "autoplay" : ""}></video>`;
+  $("#player").innerHTML = `${media}<div class="meta">
+    <div class="row"><span class="pill ${t.res}">${WORD[t.run][t.res]}</span><span class="pill fam">${esc(t.fam)}</span><span class="mono muted">${t.id} · ${t.envName} · ${RUNNAME[t.run]}</span></div>
+    <q>${esc(t.cmd)}</q>${t.why ? `<p class="why">${esc(t.why)}</p>` : ""}
+    <p class="why" style="font-size:12.5px">${t.run === "v4" ? "Kinematic replay of Astra's whole-body motion file, at the speed shown on screen." : "Plan replay: the robot drawn as a disc, objects along their planned paths."}</p>
+    <div><button type="button" class="btn sm" data-prompt-task="${t.env}|${t.run}|${t.id}" aria-haspopup="dialog">Show prompt for ${t.id}</button></div></div>`;
+}
+drawGrids(); select(sel, false);
+
+/* failure groups */
+const FG = [
+  { t: "Arm clips a pillar", n: 3, cls: "", d: "Plan + motion. The plans were correct, but the whole-body motion held an arm out while walking past the same pillar (5.0–6.0 cm penetration).", ids: [["apt","v4","PA-01"],["apt","v4","PA-03"],["apt","v4","PA-07"]] },
+  { t: "Unsafe support", n: 2, cls: "", d: "Plan only. Astra stood on furniture the robot should not climb: a staircase on the round table, and a chair under a window latch.", ids: [["apt","r2","RA-03"],["lab","r2","TL-01"]] },
+  { t: "Missed an impossible task", n: 1, cls: "", d: "Plan only. The router was out of reach, but Astra planned a third step on a 9 kg cart on wheels.", ids: [["test","r2","RT-06"]] },
+  { t: "Collision while carrying", n: 1, cls: "", d: "Plan only. The carried chair hit the scene on the way to its goal pose.", ids: [["test","r2","T-Q2-05"]] },
+  { t: "Valid, not ideal", n: 3, cls: "warn", d: "Plan only. Working plans that step on the coffee table, or move two objects where one is enough.", ids: [["apt","r2","RA-07"],["apt","r2","TA-05"],["lab","r2","L-Q1-07"]] },
+];
+$("#fails").innerHTML = FG.map(g => `<div class="fcard ${g.cls}"><header><b>${g.t}</b><span>${g.n}</span></header><p>${g.d}</p>
+  <div class="links">${g.ids.map(([e, r, i]) => `<button type="button" data-k="${e}|${r}|${i}">▶ ${i}</button>`).join("")}</div></div>`).join("");
+$$("#fails .links button").forEach(b => b.onclick = () => {
+  const [en, ru, id] = b.dataset.k.split("|");
+  if (fam !== "all") { fam = "all"; $$("#famFilters .chip").forEach(c => c.setAttribute("aria-pressed", c.dataset.f === "all")); drawGrids(); }
+  select(ALL.find(t => t.env === en && t.run === ru && t.id === id), true);
+  $("#explorer").scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+});
+
+
+/* ---------- 6 real runs ---------- */
+const REAL = [
+  { k: "real_C1", name: "C1", short: "3 pushes · 5.3 cm" },
+  { k: "real_C2", name: "C2", short: "2 pushes · 3.1 cm" },
+  { k: "real_1027i", name: "C3", short: "3 pushes · 4 cm" },
+  { k: "real_C4", name: "C4", short: "2 pushes · 3.4 cm" },
+];
+const rv = $("#realVid");
+$("#runTabs").innerHTML = REAL.map((r, i) => `<button type="button" role="tab" aria-selected="${i === 0}" data-i="${i}"><b>${r.name}</b><span>${r.short}</span></button>`).join("");
+function showRun(i, play) {
+  const r = REAL[i];
+  $$("#runTabs button").forEach(b => b.setAttribute("aria-selected", +b.dataset.i === i));
+  rv.poster = `assets/real/${r.k}.jpg`; rv.src = `assets/real/${r.k}.mp4`;
+  rv.setAttribute("aria-label", `Real run ${r.name}: Blender twin from the tracked poses beside the three tracking cameras`);
+  if (play) rv.play().catch(() => {});
+}
+$$("#runTabs button").forEach(b => b.onclick = () => showRun(+b.dataset.i, true));
+showRun(0, false);
+
+
+/* ---------- prompts drawer ---------- */
+const PRUNS = {
+  v4: { name: "Plan + motion", what: "Plan + whole-body motion for Sprout", meta: [["Date", "14 Oct 2026"], ["Robot", "Sprout (25 kg, 1.13 m) and its MuJoCo model"], ["Output", "Plan, then a whole-body joint trajectory"], ["Sent as", "API runner, reasoning effort xhigh, with the system message below. Retrieve and place ran as two parallel sessions."]],
+    files: [["v4r", "Retrieve · 25 tasks", "sprout_v4_retrieve_PROMPT.md"], ["v4p", "Place · 14 tasks", "sprout_v4_place_PROMPT.md"], ["sys", "System message", "system_prompt.txt"]] },
+  r2: { name: "Plan only", what: "Plans only, for a stand-in robot", meta: [["Date", "6 Oct 2026"], ["Robot", "Stand-in robot, 45 kg, 0.70 m hand reach"], ["Output", "Plan only: walks, object moves, supports, reach stance"], ["Sent as", "Codex CLI, reasoning effort max. One session; the overview chains the three parts."]],
+    files: [["top", "Overview", "PROMPT_top.md"], ["p1", "Part 1 · retrieval · 15", "part1_retrieval_PROMPT.md"], ["p2", "Part 2 · tool use · 7", "part2_tool_use_PROMPT.md"], ["p3", "Part 3 · reach · 11", "part3_reach_PROMPT.md"]] },
+  suit: { name: "Suitcase push", what: "One task: push the suitcase to the dishwasher", meta: [["Date", "25 Oct 2026"], ["Robot", "Sprout, pushing with its lower leg"], ["Output", "Plan only"], ["Sent as", "Codex CLI, reasoning effort max. User message: “Read PROMPT.md in this folder and do the task it describes. Write only astra_suitcase_step.json, exactly as PROMPT.md specifies (the plan only, no motion files).”"], ["Note", "The margin plan used the same task and rules with a larger fridge clearance. Its prompt is not in the zip."]],
+    files: [["suit", "Prompt", "suitcase_PROMPT.md"]] },
+};
+const pd = { el: $("#pdrawer"), scrim: $("#pdScrim"), body: $("#pdBody"), run: null, file: null, task: null, raw: false, opener: null, cache: {} };
+const fileOf = (run, key) => PRUNS[run].files.find(f => f[0] === key);
+const mdToHtml = txt => {
+  if (!window.marked) return `<pre class="raw">${esc(txt)}</pre>`;
+  const r = new marked.Renderer(); r.html = h => esc(h);
+  return marked.parse(txt, { renderer: r, mangle: false, headerIds: false });
+};
+function pdRender() {
+  const R = pd.run ? PRUNS[pd.run] : null;
+  $("#pdRuns").innerHTML = Object.entries(PRUNS).map(([k, v]) => `<button type="button" class="chip" data-run="${k}" aria-pressed="${k === pd.run}">${v.name}</button>`).join("");
+  $$("#pdRuns .chip").forEach(b => b.onclick = () => { pd.task = null; pdOpen(b.dataset.run, PRUNS[b.dataset.run].files[0][0]); });
+  if (!R) {
+    $("#pdTitle").textContent = "Planner prompts"; $("#pdEyebrow").textContent = "Planner prompts";
+    ["#pdFiles", "#pdMeta", "#pdTools"].forEach(id => $(id).hidden = true); $("#pdTask").hidden = true;
+    pd.body.innerHTML = `<div class="pd-index"><p class="muted">Every command in a run is planned with the same prompt; the command itself comes from the run's task list. Pick a run.</p>${Object.entries(PRUNS).map(([k, v]) => `<button type="button" data-run="${k}"><b>${v.name}</b><span>${v.what} · ${v.files.length} file${v.files.length > 1 ? "s" : ""}</span></button>`).join("")}</div>`;
+    $$(".pd-index button", pd.body).forEach(b => b.onclick = () => pdOpen(b.dataset.run, PRUNS[b.dataset.run].files[0][0]));
+    return;
+  }
+  ["#pdFiles", "#pdTools"].forEach(id => $(id).hidden = false); $("#pdMeta").hidden = true;
+  $("#pdTitle").textContent = R.name; $("#pdEyebrow").textContent = "Planner prompt";
+  $("#pdFiles").innerHTML = R.files.map(([k, n]) => `<button type="button" class="chip" data-f="${k}" aria-pressed="${k === pd.file}">${n}</button>`).join("");
+  $$("#pdFiles .chip").forEach(b => b.onclick = () => pdOpen(pd.run, b.dataset.f, pd.task));
+  const t = pd.task;
+  $("#pdTask").hidden = !t;
+  if (t) $("#pdTask").innerHTML = `<span class="label">${t.id} · ${t.envName} · this task's command</span><q>${esc(t.cmd)}</q>`;
+  const f = fileOf(pd.run, pd.file);
+  $("#pdRaw").setAttribute("aria-pressed", pd.raw);
+  const show = txt => { pd.body.innerHTML = pd.raw || f[2].endsWith(".txt") ? `<pre class="raw">${esc(txt)}</pre>` : mdToHtml(txt); pd.body.scrollTop = 0; };
+  if (pd.cache[f[2]] != null) show(pd.cache[f[2]]);
+  else { pd.body.innerHTML = `<p class="muted" style="padding-top:14px">Loading…</p>`;
+    fetch("assets/prompts/" + f[2]).then(r => { if (!r.ok) throw 0; return r.text(); }).then(txt => { pd.cache[f[2]] = txt; if (fileOf(pd.run, pd.file) === f) show(txt); })
+      .catch(() => { pd.body.innerHTML = `<p class="muted" style="padding-top:14px">Couldn't load this prompt file.</p>`; }); }
+}
+function pdOpen(run, file, task) {
+  pd.run = run; pd.file = file; pd.task = task || null;
+  if (pd.el.hidden) { pd.opener = document.activeElement; pd.el.hidden = false; pd.scrim.hidden = false; document.documentElement.style.overflow = "hidden"; setTimeout(() => $("#pdClose").focus(), 0); }
+  pdRender();
+}
+function pdClose() {
+  pd.el.hidden = true; pd.scrim.hidden = true; document.documentElement.style.overflow = "";
+  if (pd.opener && pd.opener.focus) pd.opener.focus();
+}
+$("#pdClose").onclick = pdClose; pd.scrim.onclick = pdClose;
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !pd.el.hidden) pdClose(); });
+$("#pdRaw").onclick = () => { pd.raw = !pd.raw; pdRender(); };
+$("#pdCopy").onclick = async e => {
+  const b = e.currentTarget, txt = pd.cache[fileOf(pd.run, pd.file)[2]] || "";
+  try { await navigator.clipboard.writeText(txt); b.textContent = "Copied"; }
+  catch (err) { pd.raw = true; pdRender(); const r = document.createRange(); r.selectNodeContents(pd.body); const s = getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = "Selected"; }
+  setTimeout(() => b.textContent = "Copy", 1600);
+};
+const taskFile = t => t.run === "v4" ? ["v4", /^P/.test(t.id) ? "v4p" : "v4r"] : ["r2", /^R[ALT]-/.test(t.id) ? "p1" : /^T[ALT]-/.test(t.id) ? "p2" : "p3"];
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-prompt], [data-prompt-task]"); if (!b) return;
+  if (b.dataset.promptTask) { const [en, ru, id] = b.dataset.promptTask.split("|"); const t = ALL.find(x => x.env === en && x.run === ru && x.id === id); const [r, f] = taskFile(t); pdOpen(r, f, t); return; }
+  if (b.dataset.prompt === "index") { pd.task = null; pdOpen(null, null); return; }
+  const [r, f] = b.dataset.prompt.split(":"); pdOpen(r, f);
+});
+
+/* ---------- 2 3D twin viewer ---------- */
+const ROOMS = {
+  apt: { file: "assets/apartment.gltf.json", name: "Apartment", src: "Astra reconstruction", bodies: 100, free: 53, joints: 33, settle: "53 / 53", tasks: "28 commands",
+    kg: {"Microwave0":10,"Airfryer0":3.7,"Toaster0":1.6,"Dishrack0":1.1,"Cuttingboard0":1.2,"Bin0":1.3,"Coffeetable0":7,"Foldedscreen0":5,"Cluttertable0":9,"Box0":0.45,"Chair0":18,"Chair1":18,"Chair2":18,"Chair3":18,"Roundtable0":13,"Backpack0":3,"Stand0":4.5,"Partition0":15,"Partition1":15,"Partition2":15,"Partition3":15,"Partition4":15,"Partition5":15,"Partition6":15,"Partition7":15,"Partition8":15,"Partition9":15,"Partition10":15,"Partition11":15,"Partition12":15,"Screen0":3.7,"Desk0":33,"Desk1":33,"Tallchair0":6,"Cart0":26,"Controller0":5.5,"Controller1":1.2,"Laptop0":1.3,"Mobilerobot0":37,"Mobilerobot2":21.09,"Flightcase0":18,"Hardcase0":4.8,"Flightcase1":18,"Hardcase1":4.8,"Box1":0.35,"Box2":0.35,"Box3":0.35,"Bag0":0.8,"Bag1":0.7,"Keyboard0":0.5,"Chair4":23,"Sofa0":38,"Mediaconsole0":20} },
+  test: { file: "assets/testing.gltf.json", name: "Testing area", src: "Astra reconstruction", bodies: 73, free: 46, joints: 20, settle: "46 / 46", tasks: "32 commands",
+    kg: {"Table0":8.5,"Crate0":18,"Chair0":5.2,"Box0":0.8,"Chair1":7,"Chair2":13,"Display0":37,"Cart0":9,"Cart1":10,"Cushion0":5,"Cushion1":5,"Cushion2":5,"Cushion3":5,"Cushion4":5,"Cushion5":3,"Crate1":45,"Table1":40,"Stroller0":5.5,"Cart2":10,"Gantry0":95,"Box1":2.5,"Box2":4,"Box3":2,"Box4":3,"Box5":2,"Bin2":4,"Case0":6,"Table2":28,"Table3":28,"Monitor1":4.2,"Chair3":13,"Chair4":13,"Monitor2":4.2,"Bin0":1.7,"Bin1":1.7,"Table5":28,"Monitor4":4.2,"Monitor5":4.2,"Chair5":7,"Chair6":13,"Robot0":30,"Robot1":24,"Robot2":24,"Table6":14,"Monitor6":4.2,"Robot3":12} },
+  lab: { file: "assets/lab.gltf.json", name: "Lab", src: "LiteReality-Agent scan", bodies: 58, free: 29, joints: 5, settle: "28 / 29", tasks: "12 commands",
+    kg: {"Bicycle0":33.35,"Bin0":0.97,"Books0":0.61,"Chair0":9.61,"Chair1":7.12,"Chair2":7.95,"Chair3":11.05,"Chair4":3.85,"Chair5":9.88,"Chair6":10.39,"Cloth0":0.38,"Folder0":0.15,"Keyboard0":0.45,"Keyboard1":0.63,"Keyboard2":0.58,"Lamp0":1.76,"Lamp1":1.76,"Lamp2":1.78,"Laptop0":7.09,"Laptop1":9.44,"Monitor0":7.25,"Monitor1":7.8,"Monitor2":6.23,"Mouse0":0.15,"Mug0":0.27,"Mug1":0.15,"Papers0":0.77,"Papers1":0.38,"Tray0":0.4} },
+};
+const OVERHEAD = /^(Lighting|Ventilation|Pendant|Daylight|AirDiffuser|Truss)/;
+const info = $("#twinInfo"), loadEl = $("#twinLoad");
+let room = "apt", highlight = true, hideOver = true;
+let phys = null, jrows = [], frameN = 0, physFailed = false;
+const prettyJ = n => n.replace(/_/g, " ").replace(/([a-z])(\d)/gi, "$1 $2").replace(/\b(\w)/, c => c.toUpperCase());
+const drawInfo = () => {
+  const r = ROOMS[room];
+  if (!physFailed) {
+    info.innerHTML = `<p class="label" style="font-size:11px">${r.src} · MuJoCo 3.15 in your browser</p>
+      <p class="muted" style="font-size:12.5px">${r.bodies} bodies · ${r.free} movable · ${r.joints} doors and drawers</p>
+      <p class="phys-hint">Drag any object to push it. Hold Shift while dragging to lift. Walls and fixed furniture don't move.</p>
+      <label><input type="checkbox" id="hideOv" ${hideOver ? "checked" : ""}> Hide overhead fixtures</label>
+      <div class="jlist" id="jlist"><h4>Doors and drawers</h4><p class="muted" style="font-size:12.5px">Loading…</p></div>`;
+    $("#hideOv").onchange = e => { hideOver = e.target.checked; phys && phys.setHideOver(hideOver); };
+    if (phys && phys.joints) drawJoints();
+    return;
+  }
+  info.innerHTML = `<p class="label" style="font-size:11px">${r.src}</p><div class="kv"><span>Bodies</span><span>${r.bodies}</span><span>Movable</span><span>${r.free}</span><span>Doors, drawers</span><span>${r.joints}</span><span>Settle in 5 s</span><span>${r.settle}</span><span>Planning tasks</span><span>${r.tasks}</span></div>
+  <div class="legend"><span><i style="background:var(--accent)"></i>movable (when shown)</span><span><i style="background:var(--line)"></i>fixed</span></div>
+  <label><input type="checkbox" id="hlMov" ${highlight ? "checked" : ""}> Show movable objects in orange</label>
+  <label><input type="checkbox" id="hideOv" ${hideOver ? "checked" : ""}> Hide overhead fixtures</label>`;
+  $("#hlMov").onchange = e => { highlight = e.target.checked; window.__twinHooks && window.__twinHooks.look(); };
+  $("#hideOv").onchange = e => { hideOver = e.target.checked; window.__twinHooks && window.__twinHooks.look(); };
+};
+function drawJoints() {
+  const box = $("#jlist"); if (!box || !phys) return;
+  const J = phys.joints;
+  // slider runs closed (left) -> open (right), whichever sign the joint opens in
+  const span = j => { const z = j.lo <= 0 && j.hi >= 0; const c = z ? 0 : j.lo; return [c, z ? (Math.abs(j.lo) > Math.abs(j.hi) ? j.lo : j.hi) : j.hi]; };
+  const toT = (j, q) => { const [c, o] = span(j); return o === c ? 0 : Math.round(1000 * (q - c) / (o - c)); };
+  box.innerHTML = `<h4>Doors and drawers · ${J.length}</h4>` + (J.length ? J.map((j, i) => `<div class="jrow"><span>${esc(prettyJ(j.name))}<i id="jv${i}"></i></span><input type="range" id="jr${i}" min="0" max="1000" step="1" value="${toT(j, phys.jointValue(j))}" aria-label="${esc(prettyJ(j.name))}: closed to open"></div>`).join("") : `<p class="muted" style="font-size:12.5px">None in this room.</p>`);
+  jrows = J.map((j, i) => ({ j, inp: $("#jr" + i), lab: $("#jv" + i), busy: false, span: span(j), toT: q => toT(j, q) }));
+  for (const r of jrows) {
+    const q = () => r.span[0] + (+r.inp.value / 1000) * (r.span[1] - r.span[0]);
+    r.inp.addEventListener("input", () => { r.busy = true; phys.setJoint(r.j, q(), false); });
+    r.inp.addEventListener("change", () => { phys.setJoint(r.j, q(), true); r.busy = false; });
+  }
+}
+function updateJointUI(pv) {
+  if (++frameN % 6) return;
+  for (const r of jrows) {
+    const v = pv.jointValue(r.j);
+    if (!r.busy && document.activeElement !== r.inp) r.inp.value = r.toT(v);
+    const dv = Math.abs(v - r.span[0]);
+    r.lab.textContent = r.j.hinge ? `${Math.round(dv * 180 / Math.PI)}° open` : `${Math.round(dv * 100)} cm open`;
+  }
+}
+drawInfo();
+$$("#twinTabs button").forEach(b => b.onclick = () => {
+  room = b.dataset.room; $$("#twinTabs button").forEach(x => x.setAttribute("aria-selected", x === b));
+  if (!physFailed) { loadPhysics(); return; }
+  drawInfo(); window.__twinHooks && window.__twinHooks.load(room);
+});
+
+const ORANGE = window.THREE ? new THREE.Color(0xd9481f).convertSRGBToLinear() : null;
+const baseName = n => n.replace(/^fixed:?/, "").replace(/_\d+$/, "");
+const isFixed = n => /^fixed/.test(n);
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const gltfCache = {};
+function loadGltf(key) {
+  if (!gltfCache[key]) gltfCache[key] = new Promise((res, rej) => new THREE.GLTFLoader().load(ROOMS[key].file, g => {
+    g.scene.traverse(o => {
+      if (!o.isMesh) return;
+      const ca = o.geometry.attributes.color;
+      if (ca && !ca.userData_lin) {
+        const src = ca.array, k = src instanceof Uint8Array ? 255 : src instanceof Uint16Array ? 65535 : 1, out = new Float32Array(src.length);
+        for (let i = 0; i < src.length; i++) { const c = src[i] / k; out[i] = (i % ca.itemSize === 3) ? c : (c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4)); }
+        const na = new THREE.BufferAttribute(out, ca.itemSize); na.userData_lin = true; o.geometry.setAttribute("color", na);
+      }
+    });
+    res(g.scene);
+  }, undefined, rej));
+  return gltfCache[key];
+}
+class TwinViewer {
+  constructor(box, opts = {}) {
+    this.box = box; this.opts = opts; this.room = opts.room || "apt"; this.highlight = !!opts.highlight; this.hideOver = true;
+    this.canvas = $("canvas", box); this.hov = $(".twin-hover", box); this.loadEl = $(".twin-load", box);
+    const r = this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true });
+    r.setPixelRatio(Math.min(devicePixelRatio, 2)); r.outputEncoding = THREE.sRGBEncoding;
+    this.scene = new THREE.Scene(); this.camera = new THREE.PerspectiveCamera(40, 1.6, 0.05, 200);
+    const c = this.controls = new THREE.OrbitControls(this.camera, this.canvas);
+    c.enableDamping = true; c.maxPolarAngle = Math.PI * 0.49; c.autoRotate = !!opts.autoRotate; c.autoRotateSpeed = 0.8;
+    c.addEventListener("start", () => { c.autoRotate = false; });
+    this.scene.add(new THREE.HemisphereLight(0xffffff, 0x6b6156, 0.85));
+    const sun = new THREE.DirectionalLight(0xffffff, 0.75); sun.position.set(4, 10, 6); this.scene.add(sun);
+    this.setBg = () => { this.scene.background = new THREE.Color(css("--surface") || "#f8f9f8"); }; this.setBg();
+    this.mq = matchMedia("(prefers-color-scheme: dark)"); this.mq.addEventListener("change", this.setBg);
+    this.mo = new MutationObserver(this.setBg); this.mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    this.ro = new ResizeObserver(() => this.resize()); this.ro.observe(box);
+    this.ray = new THREE.Raycaster(); this.mouse = new THREE.Vector2(); this.pending = null; this.pickables = [];
+    this.onMove = e => { this.pending = e; }; this.onLeave = () => { this.pending = null; this.hov.hidden = true; };
+    this.canvas.addEventListener("pointermove", this.onMove); this.canvas.addEventListener("pointerleave", this.onLeave);
+    this.alive = true; this.resize(); this.load(this.room);
+    const loop = () => { if (!this.alive) return; this.raf = requestAnimationFrame(loop); this.controls.update(); this.pick(); this.renderer.render(this.scene, this.camera); };
+    loop();
+  }
+  resize() { const w = this.box.clientWidth, h = this.box.clientHeight; if (!w || !h) return; this.renderer.setSize(w, h, false); this.camera.aspect = w / h; this.camera.updateProjectionMatrix(); }
+  load(key) {
+    this.room = key; if (this.current) this.scene.remove(this.current); this.current = null; this.hov.hidden = true;
+    this.loadEl.hidden = false; this.loadEl.textContent = `Loading ${ROOMS[key].name} twin…`;
+    loadGltf(key).then(src => {
+      if (!this.alive || this.room !== key) return;
+      const root = src.clone(true);
+      root.traverse(o => {
+        if (!o.isMesh) return;
+        o.userData.body = o.name;
+        o.material = o.material.clone(); o.material.vertexColors = !!o.geometry.attributes.color;
+        o.material.flatShading = true; o.material.roughness = 0.85; o.material.metalness = 0;
+        o.userData.mat0 = o.material;
+        o.userData.matHi = new THREE.MeshStandardMaterial({ color: ORANGE, roughness: 0.7, metalness: 0, flatShading: true });
+      });
+      this.current = root; this.scene.add(root); this.applyLook(); this.frame(); this.loadEl.hidden = true;
+    }, () => { this.loadEl.textContent = "Couldn't load this twin."; });
+  }
+  applyLook() {
+    if (!this.current) return;
+    const kg = ROOMS[this.room].kg; this.pickables = [];
+    this.current.traverse(o => {
+      if (!o.isMesh) return;
+      const nm = baseName(o.userData.body), fixed = isFixed(o.userData.body);
+      o.visible = !(this.hideOver && fixed && OVERHEAD.test(nm));
+      o.material = this.highlight && !fixed && kg[nm] !== undefined ? o.userData.matHi : o.userData.mat0;
+      if (o.visible) this.pickables.push(o);
+    });
+  }
+  frame() {
+    const box = new THREE.Box3().setFromObject(this.current), c = box.getCenter(new THREE.Vector3()), s = box.getSize(new THREE.Vector3());
+    const d = Math.max(s.x, s.z), k = this.opts.zoom || 1;
+    this.controls.target.set(c.x, 0.4, c.z);
+    this.camera.position.set(c.x + d * 0.35 * k, d * 0.95 * k, c.z + d * 0.75 * k); this.controls.update();
+  }
+  pick() {
+    if (!this.pending || !this.current) return;
+    const b = this.canvas.getBoundingClientRect(), e = this.pending; this.pending = null;
+    this.mouse.set(((e.clientX - b.left) / b.width) * 2 - 1, -((e.clientY - b.top) / b.height) * 2 + 1);
+    this.ray.setFromCamera(this.mouse, this.camera);
+    const hit = this.ray.intersectObjects(this.pickables, false)[0];
+    if (!hit) { this.hov.hidden = true; return; }
+    const raw = hit.object.userData.body, nm = baseName(raw), kg = ROOMS[this.room].kg[nm];
+    this.hov.textContent = isFixed(raw) || kg === undefined ? `${nm} · fixed` : `${nm} · movable · ${kg} kg`;
+    this.hov.hidden = false;
+  }
+  destroy() {
+    this.alive = false; cancelAnimationFrame(this.raf); this.ro.disconnect(); this.mo.disconnect(); this.mq.removeEventListener("change", this.setBg);
+    this.controls.dispose(); this.renderer.dispose(); this.renderer.forceContextLoss();
+  }
+}
+const haveThree = !!(window.THREE && THREE.GLTFLoader && THREE.OrbitControls);
+if (haveThree) window.TwinViewer = TwinViewer;
+showStage(0);
+if (!haveThree) { loadEl.textContent = "3D viewer could not load."; return; }
+let mainViewer = null;
+const view = $("#twinView");
+const PHYS = { apt: ["assets/phys/apartment.phys.json", [-0.6837, -3.7848, -1.6181]], test: ["assets/phys/testing.phys.json", [0.695, 2.14, -1.245]], lab: ["assets/phys/lab.phys.json", [3.408, 3.0229, -1.5866]] };
+let physModule = null;
+const pauseBtn = $("#physPause"), resetBtn = $("#physReset");
+const setTools = on => { pauseBtn.disabled = resetBtn.disabled = !on; pauseBtn.textContent = "Pause"; pauseBtn.setAttribute("aria-pressed", "false"); };
+pauseBtn.onclick = () => { if (!phys) return; const p = !phys.paused; phys.setPaused(p); pauseBtn.textContent = p ? "Play" : "Pause"; pauseBtn.setAttribute("aria-pressed", p); };
+resetBtn.onclick = () => { if (!phys) return; phys.reset(); if (phys.paused) { phys.setPaused(false); pauseBtn.textContent = "Pause"; pauseBtn.setAttribute("aria-pressed", "false"); } };
+function freshCanvas() {
+  const old = $("canvas", view), cv = document.createElement("canvas"); cv.setAttribute("aria-label", old.getAttribute("aria-label") || "3D view"); old.replaceWith(cv);
+  $(".twin-hover", view).hidden = true;
+}
+function fallBack() {
+  physFailed = true; if (phys) { phys.destroy(); phys = null; } jrows = [];
+  freshCanvas(); $("#twinTools").hidden = true;
+  $("#twinHelp").textContent = "Drag to orbit · scroll or pinch to zoom · hover an object";
+  drawInfo(); info.insertAdjacentHTML("afterbegin", `<p class="muted" style="font-size:12.5px">Physics couldn't start in this browser, so this is the static model.</p>`);
+  loadEl.hidden = true; mainViewer = new TwinViewer(view, { room, highlight });
+}
+async function loadPhysics() {
+  const token = {}; loadPhysics.token = token;
+  if (phys) { phys.destroy(); phys = null; } jrows = [];
+  freshCanvas(); setTools(false); drawInfo();
+  loadEl.hidden = false; loadEl.textContent = "Starting the physics engine…";
+  try {
+    physModule ||= await import("./assets/mj/physics.js");
+    if (loadPhysics.token !== token) return;
+    const [bundle, frame] = PHYS[room];
+    phys = new physModule.PhysicsView(view, { bundle, frame, accent: css("--accent"),
+      setBg: sc => { sc.background = new THREE.Color(css("--surface") || "#f8f9f8"); },
+      onStatus: st => { if (loadPhysics.token !== token) return; if (st === "ready") { loadEl.hidden = true; drawJoints(); setTools(true); phys.setHideOver(hideOver); } else { loadEl.hidden = false; loadEl.textContent = st; } },
+      onFrame: updateJointUI });
+    window.__phys = phys;
+    await phys.load();
+  } catch (err) {
+    console.error(err);
+    if (loadPhysics.token === token) fallBack();
+  }
+}
+new IntersectionObserver((es, ob) => { if (es[0].isIntersecting) { ob.disconnect(); loadPhysics(); } }, { rootMargin: "300px" }).observe(view);
+// hook the existing tab + checkbox handlers to the main viewer
+window.__twinHooks = { load: k => mainViewer && mainViewer.load(k), look: () => { if (mainViewer) { mainViewer.highlight = highlight; mainViewer.hideOver = hideOver; mainViewer.applyLook(); } } };
+})();
+</script>
